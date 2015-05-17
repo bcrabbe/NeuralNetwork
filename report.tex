@@ -1,0 +1,341 @@
+\documentclass[11pt]{article} % Try also "scrartcl" or "paper"
+\usepackage{helvet}
+\linespread{1}
+ \usepackage[margin=1.2cm]{geometry}   % to change margins
+ \usepackage{titling}             % Uncomment both to   
+ \setlength{\droptitle}{-2.3cm}     % change title position 
+\usepackage[affil-it]{authblk}
+\usepackage{bibentry}
+\usepackage{cite}
+\usepackage{graphicx,bm,times,subfig,amsmath,amsfonts,listings,url}
+\usepackage{color}
+\usepackage[page]{appendix}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\author{Ben Crabbe}
+\affil{University of Bristol, UK}
+\title{%\vspace{-1.5cm}            % Another way to do
+Java Graphics Report}
+\begin{document}
+
+
+\maketitle
+\section{Implementation}
+Input layers need to share get output function with layers but that is it, probably not worth using inheritance?
+
+
+
+\lstset{language=Java}
+\lstdefinestyle{customc}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=Java,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{mymauve},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+\lstset{ %
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
+  basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  frame=single,                    % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  language=Java,                 % the language of the code
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  %stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,                       % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+\begin{lstlisting}
+
+import java.util.*;
+
+class Record
+{
+   public class RecordException extends Exception
+   {
+      static final long serialVersionUID = 42L;
+      public RecordException()
+      {
+         super();
+      }
+
+      public RecordException(String message)
+      {
+         super(message);
+      }
+
+      public RecordException(String message, Throwable cause)
+      {
+        super(message, cause);
+      }
+
+      public RecordException(Throwable cause)
+      {
+         super(cause);
+      }
+   }
+   class Attribute
+   {
+      String name;
+      String value;
+
+      Attribute(String nameInput, String valueInput)
+      {
+         name = nameInput;
+         value = valueInput;
+      }
+   }
+    Set<Attribute> data;
+
+    Record() {
+      data = new LinkedHashSet<Attribute>();
+    }
+
+   void addField(String fieldName, String fieldValue) throws RecordException
+   {
+      for(Attribute field: data) {
+         if(field.name==fieldName) {
+            throw new RecordException("There already exists a field named " + fieldName + "in record.");
+         }
+      }
+      Attribute newField = new Attribute(fieldName,fieldValue);
+      this.data.add(newField);
+   }
+
+   String getFieldValue(String fieldName) throws RecordException
+   {
+      for(Attribute field: data) {
+         if(field.name==fieldName) {
+            return field.value;
+         }
+      }
+      throw new RecordException("No field named " + fieldName + " in record.");
+   }
+
+   void setFieldValue(String fieldName, String fieldValue) throws RecordException
+   {
+      for(Attribute field: data) {
+         if(field.name==fieldName) {
+            field.value = fieldValue;
+            return;
+         }
+      }
+      throw new RecordException("No field named " + fieldName+ " in record.");
+   }
+
+   int countFields()
+   {
+      return data.size();
+   }
+
+   public static void main(String[] args)
+   {
+      Record row = new Record();
+      row.testRecord();
+   }
+
+   void testRecord()
+   {
+      try {
+         this.addField("Field1","value1");
+         this.addField("Field2","value2");
+         this.setFieldValue("Field2","value2.2");
+         System.out.println(this.getFieldValue("Field1"));
+         System.out.println(this.getFieldValue("Field2"));
+         System.out.println( this.countFields() );
+      } catch (Exception e) {
+         System.out.println(e.getMessage());
+      }
+   }
+}
+
+\end{lstlisting}
+
+\section{Tables}
+I decided that the main data on the attribute names, types etc should be held by the table since every row is the same, so I split the Attribute class into two: Attribute and AttributeValue. Attributes hold the name (and other things in the future), AttributeValues, which are an inner class to Tuple (I renamed Record to fit better with the relational model) hold the values and a reference to the Attribute class it belongs to. This way the values are still directly searchable by attribute name, but the name is stored in only 1 place. 
+
+I also got rid of my custom exception. It wouldn't let me pass multiple string types to store as a message, and it didn't seem to gain much to be worth writing a bunch more constructors for.
+
+
+
+
+\begin{lstlisting}
+import java.util.*;
+
+class Table
+{
+    String name;
+    List<Attribute> tableHeading;// attribute names, types, constraints etc
+    Set<Tuple> tableBody;// a set of tuples
+    
+    Table(String name)
+    {
+        this.name = name;
+        tableHeading = new ArrayList<Attribute>();//columns
+        tableBody = new LinkedHashSet<Tuple>();//rows
+    }
+
+    Table(String name, List<String> fieldNames)
+    {
+        this.name = name;
+        tableHeading = new ArrayList<Attribute>();
+        tableBody = new LinkedHashSet<Tuple>();
+        for(String newField: fieldNames) {
+            try {
+                addAttribute(newField);
+            } catch(Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+    
+    boolean attributeExists(String attributeName)
+    {
+        for(Attribute a: tableHeading) {
+            if(a.name==attributeName) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    void addAttribute(String attributeName) throws Exception
+    {
+        if(attributeExists(attributeName)){
+            throw new Exception("attribute " + attributeName + " already exists");
+        }
+        Attribute newAtt = new Attribute(attributeName);
+        tableHeading.add(newAtt);
+    }
+
+    int countFields()
+    {
+       return tableHeading.size();
+    }
+    
+    int countRows()
+    {
+        return tableBody.size();
+    }
+
+    List<String> getFieldNames()
+    {
+        List<String> fieldNames = new ArrayList<String>();
+        for(Attribute field: tableHeading) {
+            fieldNames.add(field.name);
+        }
+        return fieldNames;
+    }
+
+    void editAttributeName(String oldName, String newName) throws Exception
+    {
+        if(attributeExists(oldName)) {
+            Attribute editMyName = getAttributeFromName(oldName);
+            editMyName.name = newName;
+        }
+        else {
+            throw new Exception("Could not edit attribute name. No attribute named " +
+                                oldName + " in table.");
+        }
+    }
+
+    private Attribute getAttributeFromName(String name) throws Exception
+    {
+        for(Attribute field: tableHeading) {
+            if(field.name==name) {
+                return field;
+            }
+        }
+        throw new Exception("Could not get attribute. None named " + name + " in table.");
+    }
+
+    void addTuple(String... values) throws Exception
+    {
+        if(values.length != tableHeading.size()) {
+            throw new Exception("addTuple() for Table " + name + " expects " +
+                                    tableHeading.size() + " data values. It received " +
+                                    values.length);
+        }
+        else {
+            Tuple newTuple = new Tuple(tableHeading, Arrays.asList(values));
+            tableBody.add(newTuple);
+        }
+    }
+    
+    void deleteTuple(String attributeName, String value) throws Exception
+    {
+        if(attributeExists(attributeName)) {
+            Attribute attributeToDelete = getAttributeFromName(attributeName);
+            try {
+                for(Tuple row: tableBody) {
+                    if(row.getAttributeValue(attributeName)==value) {
+                        tableBody.remove(row);
+                        return;
+                    }
+                }
+            } catch(Exception e) {
+                throw new Exception("deleteTuple() there are no tuples where " +
+                                    attributeName + " has a value of " + value );
+            }
+        } else {
+            throw new Exception("deleteTuple()  No attribute named " + attributeName +
+                                " in table " + name);
+        }
+    }
+
+    static void is(Object x, Object y)
+    {
+        if (x == y) return;
+        if (x != null && x.equals(y)) return;
+        throw new Error("Error:\n" + x + "\n" + y);
+    }
+
+    void testTable()
+    {
+        
+    }
+
+    public static void main(String[] args)
+    {
+        Table t = new Table("testTable");
+        t.testTable();
+    }
+
+
+}
+
+\end{lstlisting}
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
