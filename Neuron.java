@@ -22,6 +22,8 @@ class Neuron
         weights = FloatMatrix.rand(numberOfConnections);
     }
     
+    
+    
     FloatMatrix getWeightVector()
     {
         return weights.dup();

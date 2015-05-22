@@ -14,9 +14,11 @@ class HiddenLayer
     private int numberOfInputs;
     private List<Neuron> neurons;
     private FloatMatrix output;
+    private int layerNumber;
 
-    HiddenLayer(int numberOfNeurons, int numberOfInputs)
+    HiddenLayer(int layerNumber, int numberOfNeurons, int numberOfInputs)
     {
+        this.layerNumber = layerNumber;
         this.numberOfInputs = numberOfInputs;
         neurons = new ArrayList<Neuron>();
         for(int i=1; i<=numberOfNeurons; ++i) {
@@ -24,20 +26,31 @@ class HiddenLayer
         }
     }
     
-    FloatMatrix getOutput(FloatMatrix input) throws Exception
+    FloatMatrix getOutput(FloatMatrix input)
     {
         if(input.length!=numberOfInputs) {
-            throw new Exception("input size doesnt match layer");
+            System.out.println("ERROR: input vector to layer" + layerNumber +
+             " is not correct size. expected: " +
+            numberOfInputs + " got: " + input.length);
+            throw new Error();
         }
         FloatMatrix inputPlusBiasConstant = addConstantTermToInputVector(input);
         
-        FloatMatrix outputVector = new FloatMatrix(numberOfInputs);
+        FloatMatrix outputVector = new FloatMatrix(neurons.size());
         int i=0;
         for(Neuron n: neurons) {
-            outputVector.put(i,0,n.getWeightVector().dot(inputPlusBiasConstant));
+            outputVector.put(i, 0,
+            activationFunction(n.getWeightVector().dot(inputPlusBiasConstant)));
             ++i;
         }
         return outputVector;
+    }
+    
+    //rectified linear unit (ReLU) non linear activation applied on each neuron
+    private float activationFunction(float z)
+    {
+        if(z>0) return z;
+        else return 0;
     }
     
     private FloatMatrix addConstantTermToInputVector(FloatMatrix input)
@@ -45,11 +58,25 @@ class HiddenLayer
         FloatMatrix inputPlusBiasConstant = new FloatMatrix(numberOfInputs+1);
         inputPlusBiasConstant.put(0,0,-1);
         for(int i=1; i<=numberOfInputs; ++i) {
-            inputPlusBiasConstant.put(i,0,input.get(i,0));
+            inputPlusBiasConstant.put(i,0,input.get(i-1,0));
         }
         return inputPlusBiasConstant;
     }
     
+    int getWidth()
+    {
+        return neurons.size();
+    }
+    
+    int getNumberOfInputs()
+    {
+        return numberOfInputs;
+    }
+    
+    int getLayerNumber()
+    {
+        return layerNumber;
+    }
     
     static void tests()
     {
@@ -58,6 +85,6 @@ class HiddenLayer
 
     public static void main(String[] args)
     {
-      HiddenLayer test = new HiddenLayer(3,2);
+      HiddenLayer test = new HiddenLayer(1,3,2);
     }
 }
