@@ -1,6 +1,11 @@
-
+import org.jblas.*;
 import java.util.*;
+/**
+Driver
 
+Initialisation class
+ 
+*/
 class Driver
 {
     static Random randomNumberGen;
@@ -11,6 +16,44 @@ class Driver
         this.randomNumberGen = new Random();
         numberOfFails=0;
     }
+    //add each matrix in mList2 element wise to each in mList1 result is stored in mList1
+    static List<FloatMatrix> addFloatMatrixListsi(List<FloatMatrix> mList1, List<FloatMatrix> mList2)
+    {
+        for(int matrix=0; matrix<mList1.size(); ++matrix) {
+            mList1.get(matrix).addi(mList2.get(matrix));
+        }
+        return mList1;
+    }
+    
+    // multiples each element of each matrix in mList by scalar, result is stored in mList
+    static List<FloatMatrix> scalarMultiplyFloatMatrixListsi(List<FloatMatrix> mList, float scalar)
+    {
+        for(int matrix=0; matrix<mList.size(); ++matrix) {
+            mList.get(matrix).muli(scalar);
+        }
+        return mList;
+    }
+    
+    //initialises the list matricies of weight updates to the correct size and all elements 0
+    //from the first one that is returned from the networks backpropagate
+    static List<FloatMatrix> copySizingInMatrixList(List<FloatMatrix> mList)
+    {
+        List<FloatMatrix> mListCopy = new ArrayList<FloatMatrix>();
+        
+        for(FloatMatrix matrix: mList) {
+            int rows = matrix.rows;
+            int cols = matrix.columns;
+            mListCopy.add(FloatMatrix.zeros(rows, cols));
+        }
+        return mListCopy;
+    }
+    
+    static void printMatrixDetails(String name, FloatMatrix m)
+    {
+        System.out.println("FloatMatrix " + name + " has " + m.rows + " rows and " + m.columns + " columns. Contains: ");
+        System.out.println(m.toString()+ "\n");
+    }
+    
     
     static void is(Object x, Object y)
     {
@@ -56,7 +99,8 @@ class Driver
     public static void main(String[] args)
     {
         Driver program = new Driver();
-        Network net = new Network(1,5,4,1);
-        //Trainer trainer = new Trainer(Network);
+        Network net = new Network(1,3,2,1);
+        Trainer trainer = new Trainer(net, 1);
+        trainer.trainNetwork();
     }
 }
