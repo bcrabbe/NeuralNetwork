@@ -1,1 +1,1 @@
-export CLASSPATH=/Users/ben/Documents/csMSc/java/jblas/target/jblas-1.2.4-SNAPSHOT.jar
+export CLASSPATH=/Users/ben/Documents/csMSc/java/jblas/target/jblas-1.2.4-SNAPSHOT.jar:.

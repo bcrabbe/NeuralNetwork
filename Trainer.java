@@ -11,7 +11,7 @@ class Trainer
 
     private float weightDecay=(float)0;
     private float momentum=(float)0.9;
-    private float learningRate=(float)0.01;
+    private float learningRate=(float)0.005;
 
     private float minX = (float)-Math.PI,
                   maxX = (float)Math.PI;
@@ -34,7 +34,7 @@ class Trainer
             //net.printNetworkWeights();
             presentTrainingBatch();
             System.out.println("Biggest update was " + net.getMaxPreviousUpdate());
-           // net.printNetworkDetails();
+            //net.printNetworkDetails();
             float validationError = measureValidationError();
             System.out.println("Batch number = " + batchNumber +
                                ". Validation error = " + validationError);
@@ -54,7 +54,7 @@ class Trainer
         for(int i=0; i<validationSetSize; ++i) {
             List<FloatMatrix> example = validationSet.get(i);
             FloatMatrix netOutput = net.computeFowardPass(example.get(0));
-            printValidationResult(example.get(0), netOutput, example.get(1));
+            //printValidationResult(example.get(0), netOutput, example.get(1));
             validationError += computeExampleLoss(netOutput, example.get(1));
         }
         return validationError/(float)validationSetSize;
