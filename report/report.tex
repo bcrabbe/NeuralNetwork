@@ -718,7 +718,10 @@ I have changed the forwards pass methods to store all the information needed in 
         return outputVector;
     }
 \end{lstlisting}
-I had a number of bugs in the backPropagate method which took some time to iron out. Matricies wern't the right size to be multiplied etc.. I wasn't entirely confident that I had the correct equations in the first place since the tutorial I was following (the stanford link above) used a  different definition of the network where the weights belong to the layer producing the input rather than recieving it. The backPropagate/compute deltas methods were difficult to test since they were using values computed in the forwards pass.
+I had a number of bugs in the backPropagate method which took some time to iron out. Matricies wern't the right size to be multiplied etc.. I wasn't entirely confident that I had the correct equations in the first place since the tutorial I was following (the stanford link above) used a  different definition of the network where the weights belong to the layer producing the input rather than recieving it. The backPropagate/compute deltas methods were difficult to test since they were using values computed in the forwards pass. 
+
+Eventually I found that I was multiplying the deltas by the transpose of the outputs rather than the inputs by mistake.
+
 
  I started out checking the my weight matrix extraction method in the HiddenLayers was working correctly
 
@@ -892,8 +895,9 @@ which I found very helpful for checking the state of the layers in the backPropo
 
 
 
+The Trainer class which handles all of this accumulating weight/bias updates over a batch of examples seemed a better place for creating the examples, rather than the InputLayer class, which is now redundant. 
 
-The Trainer class which handles all of this accumulating weight/bias updates over a batch of examples
+
 
 \begin{lstlisting}
 import org.jblas.*;
@@ -997,12 +1001,81 @@ class Trainer
    
 }
 \end{lstlisting}
-\begin{lstlisting}
 
-\end{lstlisting}
-\begin{lstlisting}
 
+
+
+At the end of each batch of examples the accumulated weight updates are passed to the Network's updateParameters method which implements weight decay regularisation 
+
+\begin{align}
+W^{(l)} &= W^{(l)} - \alpha \left[ \left(\frac{1}{m} \Delta W^{(l)} \right) + \lambda W^{(l)}\right] \\
+b^{(l)} &= b^{(l)} - \alpha \left[\frac{1}{m} \Delta b^{(l)}\right]
+\end{align}
+where $\alpha$ is the learning rate, $\lambda$ is the weight decay strength.
+And uses a simple momentum which speeds up the gradient descent:
+\begin{equation}\boldsymbol v_{t+1}=\mu \boldsymbol v_{t} -\alpha \nabla E(\boldsymbol W)\label{eq:gradientDescentMomentum}\end{equation}\begin{equation}\boldsymbol W_{t+1}=\boldsymbol W_{t}+\boldsymbol v_{t+1}\label{eq:gradientDescentMomentum2}\end{equation}
+where $\mu$ is the momentum.
+
+\begin{lstlisting}
+    void updateParameters(List<FloatMatrix> deltaW_l, List<FloatMatrix> deltaB_l,
+                          float weightDecay, float momementum, float learningRate)
+    {
+        int layerNumber=0;
+        for(HiddenLayer layer: hiddenLayers) {
+            FloatMatrix currentWeights = layer.getWeightMatrix();
+            FloatMatrix currentBiases = layer.getBiasVector();
+            FloatMatrix weightDecayTerm = currentWeights.mul(weightDecay);
+            FloatMatrix weightMomentumTerm = previousWeightUpdate.get(layerNumber).mul(momementum);
+            FloatMatrix biasMomentumTerm = previousBiasUpdate.get(layerNumber).mul(momementum);
+            FloatMatrix weightUpdates = weightMomentumTerm.sub(
+                deltaW_l.get(layerNumber).add(weightDecayTerm).mul(learningRate)
+            );
+            FloatMatrix biasUpdates = biasMomentumTerm.sub(
+                deltaB_l.get(layerNumber).mul(learningRate)
+            );
+            layer.setWeightMatrix(currentWeights.addi(weightUpdates));
+            layer.setBiasVector(currentBiases.addi(biasUpdates));
+            previousWeightUpdate.get(layerNumber).copy(weightUpdates);
+            previousBiasUpdate.get(layerNumber).copy(biasUpdates);
+            ++layerNumber;
+        }
+    }
 \end{lstlisting}
+
+
+The trainer runs a training batch, then checks the average error $J(W,b)$ over a validation set. Ideally the validation error should generally decrease after each batch. However at this stage we dont see that:
+\begin{lstlisting}
+Batch number = 1. Validation error = 0.1880772
+Batch number = 2. Validation error = 0.23654647
+Batch number = 3. Validation error = 0.23251526
+Batch number = 4. Validation error = 0.25341678
+Batch number = 5. Validation error = 0.21497807
+Batch number = 6. Validation error = 0.24840948
+Batch number = 7. Validation error = 0.30167556
+Batch number = 8. Validation error = 0.21359357
+Batch number = 9. Validation error = 0.33649924
+Batch number = 10. Validation error = 0.21925502
+Batch number = 11. Validation error = 0.2683097
+Batch number = 12. Validation error = 0.24874222
+Batch number = 13. Validation error = 0.19440642
+Batch number = 14. Validation error = 0.18211803
+Batch number = 15. Validation error = 0.20515862
+Batch number = 16. Validation error = 0.24847682
+Batch number = 17. Validation error = 0.23287967
+Batch number = 18. Validation error = 0.26681724
+Batch number = 19. Validation error = 0.28868058
+Batch number = 20. Validation error = 0.28547257
+Batch number = 21. Validation error = 0.26883692
+Batch number = 22. Validation error = 0.17752711
+Batch number = 23. Validation error = 0.2787137
+Batch number = 24. Validation error = 0.201895
+Batch number = 25. Validation error = 0.26796734
+Batch number = 26. Validation error = 0.22178277
+\end{lstlisting}
+Hopefully this is because of the settings of the hyperparameters (learning rate, momentum, number of layers, number of neurons, initial weight settings etc) rather than a problem with the code/agorithm.
+
+To analyse th
+
 \begin{lstlisting}
 
 \end{lstlisting}

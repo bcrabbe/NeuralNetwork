@@ -99,7 +99,7 @@ class Driver
     public static void main(String[] args)
     {
         Driver program = new Driver();
-        Network net = new Network(1,3,2,1);
+        Network net = new Network(1,3,7,11,16,1);
         Trainer trainer = new Trainer(net, 1);
         trainer.trainNetwork();
     }

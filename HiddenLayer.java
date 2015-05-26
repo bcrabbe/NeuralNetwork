@@ -63,7 +63,9 @@ class HiddenLayer
     // f(x) = max(0,x)
     private float activationFunction(float z)
     {
-        return z>0 ? z : 0;
+        //return z>0 ? z : 0; //ReLU
+        //return 1/(float)(1+Math.exp(-z));//logistic function
+        return (float)1.7159*(float)Math.tanh(0.666*z);//tanh
     }
     
     //f'(z) for back propagate
@@ -71,7 +73,9 @@ class HiddenLayer
     //          = 1 if z_i>0
     private float activationFunctionDash(float z)
     {
-        return z>0 ? 1 : 0;
+       // return z>0 ? 1 : 0;
+       //return activationFunction(z)*(1-activationFunction(z));//sigmoid
+        return 1-(float)Math.pow(activationFunction(z),2);//tanh
     }
     
     private FloatMatrix addConstantTermToInputVector(FloatMatrix input)

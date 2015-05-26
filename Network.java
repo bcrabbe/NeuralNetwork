@@ -81,6 +81,7 @@ class Network
             FloatMatrix weightUpdates = weightMomentumTerm.sub(
                 deltaW_l.get(layerNumber).add(weightDecayTerm).mul(learningRate)
             );
+           // Driver.printMatrixDetails("weight updates",weightUpdates );
             FloatMatrix biasUpdates = biasMomentumTerm.sub(
                 deltaB_l.get(layerNumber).mul(learningRate)
             );
@@ -92,9 +93,35 @@ class Network
         }
     }
     
+    float getMaxPreviousUpdate()
+    {
+        float max=0;
+        for(FloatMatrix layerUpdates: previousWeightUpdate) {
+            if(Math.abs(layerUpdates.max())>max) {
+                max = Math.abs(layerUpdates.max());
+            }
+        }
+        return max;
+    }
+    
     int getNumberOfLayers()
     {
         return hiddenLayers.size();
+    }
+    
+    void printNetworkWeights()
+    {
+        for(HiddenLayer layer: hiddenLayers) {
+            String name = "\nLAYER " + layer.getLayerNumber() + ": \n";
+            System.out.println(name + layer.getWeightMatrix());
+        }
+    }
+    
+    void printNetworkDetails()
+    {
+        for(HiddenLayer layer: hiddenLayers) {
+            layer.printLayerDetails();
+        }
     }
     
     void testsNetworkDefinition(int... definition)
