@@ -13,7 +13,7 @@ class Driver
     
     Driver()
     {
-        this.randomNumberGen = new Random();
+        Driver.randomNumberGen = new Random();
         numberOfFails=0;
     }
     //add each matrix in mList2 element wise to each in mList1 result is stored in mList1
@@ -99,7 +99,7 @@ class Driver
     public static void main(String[] args)
     {
         Driver program = new Driver();
-        Network net = new Network(1,3,7,11,16,1);
+        Network net = new Network(1,5,10,15,10,1);
         Trainer trainer = new Trainer(net, 1);
         trainer.trainNetwork();
     }

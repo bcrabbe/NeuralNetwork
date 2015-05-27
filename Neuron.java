@@ -17,8 +17,9 @@ class Neuron
         //there are n+1 connections. to n units in prev layer and a bias
         numberOfConnections=numberOfInputs+1;
         weights = FloatMatrix.rand(numberOfConnections);
-        weights.muli(1/(float)Math.sqrt(numberOfInputs));
-        weights.subi(1/((float)Math.sqrt(numberOfInputs)*2));
+        float a =1/(float)Math.sqrt(numberOfInputs);// (float)Math.sqrt(12*( Math.pow(numberOfInputs, -0.25) +1))/2;
+        weights.muli(a);
+        weights.subi(a/2);
     }
     
     //returns the bias term in the weightVector

@@ -5,40 +5,58 @@ class Trainer
 {
     private Network net;
     private int inputWidth;
-    private int trainingBatchSize=50;
+    private int trainingBatchSize=100;
     private int validationSetSize=20;
     private int trainingSetSize=2000;
 
-    private float weightDecay=(float)0;
-    private float momentum=(float)0.9;
-    private float learningRate=(float)0.005;
-
+    private float weightDecay=(float)0.000;
+    private float momentum=(float)0.99;
+    private float learningRate=(float)0.0025;
+    
     private float minX = (float)-Math.PI,
                   maxX = (float)Math.PI;
     List<List<FloatMatrix>> validationSet;
     List<List<FloatMatrix>> trainingSet;
-
     
+    private boolean plotting = true;
+    private GraphWindow validationResultsWindow = null;
+    private GraphWindow validationErrorWindow = null;
+    private DataList validationErrorDataList;
+    //examples perPlot:
+    private int plotRate = 10001;
     Trainer(Network net, int inputWidth)
     {
         this.net = net;
         this.inputWidth = inputWidth;
         validationSet = makeDataSet(validationSetSize);
         //trainingSet = makeDataSet(trainingSetSize);
+        validationErrorDataList = new DataList();
     }
     
     void trainNetwork()
     {
-        int batchNumber=1;
-        while(batchNumber<1000000) {
+        int examplesShown=0, examplesUntillPrint=plotRate;
+        while(true) {
             //net.printNetworkWeights();
             presentTrainingBatch();
-            System.out.println("Biggest update was " + net.getMaxPreviousUpdate());
+            //System.out.println("Biggest update was " + net.getMaxPreviousUpdate());
             //net.printNetworkDetails();
-            float validationError = measureValidationError();
-            System.out.println("Batch number = " + batchNumber +
-                               ". Validation error = " + validationError);
-            ++batchNumber;
+            if(examplesUntillPrint<=0) {
+                float validationError = measureValidationError(true);
+                if(plotting) {
+                    validationErrorDataList.add((float)examplesShown, validationError);
+                    plotValidationError();
+                    plotValidationResults();
+                }
+                System.out.println("After " + examplesShown +
+                               " examples. Validation error = " + validationError);
+                if(validationError<0.1) learningRate = learningRate*(float)0.75;
+                if(validationError<0.03) learningRate = learningRate*(float)0.50;
+
+                examplesUntillPrint=plotRate;
+            }
+            examplesShown+=trainingBatchSize;
+            examplesUntillPrint-=trainingBatchSize;
         }
     }
     
@@ -48,16 +66,42 @@ class Trainer
         System.out.println("x: " + input.toString() + " h(x): " + output.toString() + " y: " + label.toString());
     }
     
-    private float measureValidationError()
+    private float measureValidationError(boolean verbose)
     {
         float validationError = 0;
         for(int i=0; i<validationSetSize; ++i) {
             List<FloatMatrix> example = validationSet.get(i);
             FloatMatrix netOutput = net.computeFowardPass(example.get(0));
-            //printValidationResult(example.get(0), netOutput, example.get(1));
+            if(verbose) {
+                printValidationResult(example.get(0), netOutput, example.get(1));
+            }
             validationError += computeExampleLoss(netOutput, example.get(1));
         }
         return validationError/(float)validationSetSize;
+    }
+    
+    private void plotValidationError()
+    {
+        if(validationErrorWindow==null) {
+            validationErrorWindow = new GraphWindow(validationErrorDataList);
+        } else {
+            validationErrorWindow.update(validationErrorDataList);
+        }
+    }
+    
+    private void plotValidationResults()
+    {
+        DataList datalist = new DataList(validationSetSize);
+        for(int i=0; i<validationSetSize; ++i) {
+            List<FloatMatrix> example = validationSet.get(i);
+            FloatMatrix netOutput = net.computeFowardPass(example.get(0));
+            datalist.add(example.get(0).get(0,0), netOutput.get(0,0), example.get(1).get(0,0));
+        }
+        if(validationResultsWindow==null) {
+            validationResultsWindow = new GraphWindow(datalist);
+        } else {
+            validationResultsWindow.update(datalist);
+        }
     }
     
     private void presentTrainingBatch()

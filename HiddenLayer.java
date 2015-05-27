@@ -59,8 +59,7 @@ class HiddenLayer
         return outputVector;
     }
     
-    //rectified linear unit (ReLU) non linear activation applied on each neuron
-    // f(x) = max(0,x)
+    // non linear activation applied on each neuron
     private float activationFunction(float z)
     {
         //return z>0 ? z : 0; //ReLU
@@ -69,12 +68,10 @@ class HiddenLayer
     }
     
     //f'(z) for back propagate
-    //  f'(z)_i = 0 if z_i<0
-    //          = 1 if z_i>0
     private float activationFunctionDash(float z)
     {
        // return z>0 ? 1 : 0;
-       //return activationFunction(z)*(1-activationFunction(z));//sigmoid
+       //return activationFunction(z)*(1-activationFunction(z));//logistic
         return 1-(float)Math.pow(activationFunction(z),2);//tanh
     }
     
