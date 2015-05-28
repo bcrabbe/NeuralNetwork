@@ -1,9 +1,8 @@
 import org.jblas.*;
 import java.util.*;
 /**
-Layers
-    
- 
+Layer in the Network
+
 */
 
 class HiddenLayer
@@ -33,9 +32,7 @@ class HiddenLayer
         deltas = new FloatMatrix(numberOfNeurons, numberOfInputs);
     }
     
-    //System.out.println("ERROR: input vector to layer" + layerNumber +
-    //       " is not correct size. expected: " +
-    //    numberOfInputs + " got: " + input.length);
+    //computes the output of the layer given the input from the one below
     FloatMatrix getOutput(FloatMatrix input)
     {
         if(input.length!=numberOfInputs) {
@@ -59,32 +56,7 @@ class HiddenLayer
         return outputVector;
     }
     
-    // non linear activation applied on each neuron
-    private float activationFunction(float z)
-    {
-        //return z>0 ? z : 0; //ReLU
-        //return 1/(float)(1+Math.exp(-z));//logistic function
-        return (float)1.7159*(float)Math.tanh(0.666*z);//tanh
-    }
-    
-    //f'(z) for back propagate
-    private float activationFunctionDash(float z)
-    {
-       // return z>0 ? 1 : 0;
-       //return activationFunction(z)*(1-activationFunction(z));//logistic
-        return 1-(float)Math.pow(activationFunction(z),2);//tanh
-    }
-    
-    private FloatMatrix addConstantTermToInputVector(FloatMatrix input)
-    {
-        FloatMatrix inputPlusBiasConstant = new FloatMatrix(numberOfInputs+1);
-        inputPlusBiasConstant.put(0,0,-1);
-        for(int i=1; i<=numberOfInputs; ++i) {
-            inputPlusBiasConstant.put(i, 0, input.get(i-1,0));
-        }
-        return inputPlusBiasConstant;
-    }
-    
+    //computes each neurons error term givent those in the layer above and the weights between them
     FloatMatrix computeDeltas(FloatMatrix weightMatrixLplus1, FloatMatrix deltasLplus1)
     {
         if(weightMatrixLplus1.columns!=numberOfNeurons) {
@@ -99,6 +71,32 @@ class HiddenLayer
         //d = d bullet f'(z)
         deltas.muli(fDashOfActivationZ);
         return deltas.dup();
+    }
+    
+    // non linear activation applied on each neuron
+    private float activationFunction(float z)
+    {
+        //return z>0 ? z : 0; //ReLU
+        //return 1/(float)(1+Math.exp(-z));//logistic function
+        return (float)1.7159*(float)Math.tanh(0.666*z);//tanh
+    }
+    
+    //f'(z) for back propagate
+    private float activationFunctionDash(float z)
+    {
+       // return z>0 ? 1 : 0;//ReLU
+       //return activationFunction(z)*(1-activationFunction(z));//logistic
+        return 1-(float)Math.pow(activationFunction(z),2);//tanh
+    }
+    
+    private FloatMatrix addConstantTermToInputVector(FloatMatrix input)
+    {
+        FloatMatrix inputPlusBiasConstant = new FloatMatrix(numberOfInputs+1);
+        inputPlusBiasConstant.put(0,0,-1);
+        for(int i=1; i<=numberOfInputs; ++i) {
+            inputPlusBiasConstant.put(i, 0, input.get(i-1,0));
+        }
+        return inputPlusBiasConstant;
     }
     
     FloatMatrix getInputs()
@@ -195,7 +193,7 @@ class HiddenLayer
         System.out.println("\n");
     }
 
-    void testComputeDeltas()
+    private void testComputeDeltas()
     {
         fDashOfActivationZ = FloatMatrix.rand(numberOfNeurons);
         FloatMatrix weightMatrixLplus1 = FloatMatrix.rand(3, numberOfNeurons);
@@ -215,7 +213,7 @@ class HiddenLayer
         Driver.is(deltas.columns, 1, "does delta Matrix have correct columns");
     }
     
-    void testGetWeightMatrix()
+    private void testGetWeightMatrix()
     {
         FloatMatrix weightMatrix = getWeightMatrix();
         int unit=0;
@@ -229,10 +227,13 @@ class HiddenLayer
         }
     }
     
-    void tests()
+    private void tests()
     {
         testGetWeightMatrix();
+        Driver.finishTesting("testGetWeightMatrix");
+
         testComputeDeltas();
+        Driver.finishTesting("testComputeDeltas");
     }
 
     public static void main(String[] args)

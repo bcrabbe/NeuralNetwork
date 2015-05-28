@@ -1,6 +1,9 @@
 import java.util.*;
 import java.awt.*;
 import java.util.List;
+/*
+    a collection of DataPoints compatible with Grapher
+*/
 class DataList
 {
     List<DataPoint> data;

@@ -6,6 +6,8 @@ import java.util.*;
         W_i^l = [ b, W_1i, W_2i, ..., W_ni]
     where W_ni is the connection to unit n in l-1
     and b is a bias term.
+    
+    weights are initialed to uniform random values between ±numberOfInputs^-1/2
 */
 class Neuron
 {
@@ -17,7 +19,7 @@ class Neuron
         //there are n+1 connections. to n units in prev layer and a bias
         numberOfConnections=numberOfInputs+1;
         weights = FloatMatrix.rand(numberOfConnections);
-        float a =1/(float)Math.sqrt(numberOfInputs);// (float)Math.sqrt(12*( Math.pow(numberOfInputs, -0.25) +1))/2;
+        float a =(float)1/(float)Math.sqrt(numberOfInputs);// (float)Math.sqrt(12*( Math.pow(numberOfInputs, -0.25) +1))/2;
         weights.muli(a);
         weights.subi(a/2);
     }

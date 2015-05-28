@@ -1,5 +1,8 @@
 import java.util.*;
-
+/*
+x, y1, y2, y3... 
+data point for Grapher 
+*/
 class DataPoint
 {
     float x;

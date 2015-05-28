@@ -1,22 +1,26 @@
 import org.jblas.*;
 import java.util.*;
-
+/* Controls the training of Network 
+    set a network design and other hyperparameters from the members list 
+    and see the results plotted
+*/
 class Trainer
 {
-    private Network net;
-    private int inputWidth;
-    private int trainingBatchSize=100;
-    private int validationSetSize=20;
-    private int trainingSetSize=2000;
+    private Network net = new Network(1,80,50,1);;
+    private int inputWidth = 1;
+    private int trainingBatchSize = 10;
+    private int validationSetSize = 80;
+    private int trainingSetSize = 2000;
 
-    private float weightDecay=(float)0.000;
-    private float momentum=(float)0.99;
-    private float learningRate=(float)0.0025;
+    private float weightDecay = (float)0.05;
+    private float momentum = (float)0.95;
+    private float learningRate = (float)0.00001;
+    //multiplies the LR by numberOfLayers-layerNumber*layerLRmultiplier to negate vanishing gradients:
+    private float layerLRmultiplier = (float)5;
     
-    private float minX = (float)-Math.PI,
-                  maxX = (float)Math.PI;
+    private float minX = (float)-(1.2)*(float)Math.PI,
+                  maxX = (float)(1.2)*(float)Math.PI;
     List<List<FloatMatrix>> validationSet;
-    List<List<FloatMatrix>> trainingSet;
     
     private boolean plotting = true;
     private GraphWindow validationResultsWindow = null;
@@ -24,23 +28,24 @@ class Trainer
     private DataList validationErrorDataList;
     //examples perPlot:
     private int plotRate = 10001;
-    Trainer(Network net, int inputWidth)
+    private boolean verbose = false;
+    
+    Trainer()
     {
-        this.net = net;
-        this.inputWidth = inputWidth;
         validationSet = makeDataSet(validationSetSize);
-        //trainingSet = makeDataSet(trainingSetSize);
         validationErrorDataList = new DataList();
     }
-    
+
+    //runs training batches repeatedly plots results intermittedly
     void trainNetwork()
     {
         int examplesShown=0, examplesUntillPrint=plotRate;
         while(true) {
-            //net.printNetworkWeights();
             presentTrainingBatch();
-            //System.out.println("Biggest update was " + net.getMaxPreviousUpdate());
-            //net.printNetworkDetails();
+            if(verbose) {
+                //net.printNetworkWeights();
+                net.printNetworkDetails();
+            }
             if(examplesUntillPrint<=0) {
                 float validationError = measureValidationError(true);
                 if(plotting) {
@@ -50,14 +55,42 @@ class Trainer
                 }
                 System.out.println("After " + examplesShown +
                                " examples. Validation error = " + validationError);
-                if(validationError<0.1) learningRate = learningRate*(float)0.75;
-                if(validationError<0.03) learningRate = learningRate*(float)0.50;
-
-                examplesUntillPrint=plotRate;
+                if(verbose) System.out.println("Biggest update was " + net.getMaxPreviousUpdate());
+                examplesUntillPrint=plotRate+trainingBatchSize;
             }
             examplesShown+=trainingBatchSize;
             examplesUntillPrint-=trainingBatchSize;
         }
+    }
+    
+    //runs a batch of examples and updates network params at end
+    private void presentTrainingBatch()
+    {
+        List<FloatMatrix> deltaW_l = new ArrayList<FloatMatrix>();
+        List<FloatMatrix> deltaB_l = new ArrayList<FloatMatrix>();
+        for(int i=1; i<=trainingBatchSize; ++i) {
+            List<FloatMatrix> example = getExample();
+            List<List<FloatMatrix>> gradLoss_wrtWandB = presentTrainingExample(example.get(0), example.get(1));
+            List<FloatMatrix> gradLoss_wrtW = gradLoss_wrtWandB.get(0);
+            List<FloatMatrix> gradLoss_wrtB = gradLoss_wrtWandB.get(1);
+            if(i==1) {
+                deltaW_l = Driver.copySizingInMatrixList(gradLoss_wrtW);
+                deltaB_l = Driver.copySizingInMatrixList(gradLoss_wrtB);
+                net.initialisePreviousUpdates(gradLoss_wrtW,gradLoss_wrtB);
+            }
+            //accumulate each update gradLoss_wrtW/B in deltaW_l
+            Driver.addFloatMatrixListsi(deltaW_l, gradLoss_wrtW);
+            Driver.addFloatMatrixListsi(deltaB_l, gradLoss_wrtB);
+        }
+        Driver.scalarMultiplyFloatMatrixListsi(deltaW_l, (1/(float)trainingBatchSize));
+        Driver.scalarMultiplyFloatMatrixListsi(deltaB_l, (1/(float)trainingBatchSize));
+        net.updateParameters(deltaW_l, deltaB_l, weightDecay, momentum, learningRate, layerLRmultiplier);
+    }
+    
+    private List<List<FloatMatrix>> presentTrainingExample(FloatMatrix input, FloatMatrix label)
+    {
+        FloatMatrix netOutput = net.computeFowardPass(input);
+        return net.backpropagate(netOutput, label);
     }
     
     private void printValidationResult(FloatMatrix input, FloatMatrix output,
@@ -103,36 +136,7 @@ class Trainer
             validationResultsWindow.update(datalist);
         }
     }
-    
-    private void presentTrainingBatch()
-    {
-        List<FloatMatrix> deltaW_l = new ArrayList<FloatMatrix>();
-        List<FloatMatrix> deltaB_l = new ArrayList<FloatMatrix>();
-        for(int i=1; i<=trainingBatchSize; ++i) {
-            List<FloatMatrix> example = getExample();
-            List<List<FloatMatrix>> gradLoss_wrtWandB = presentTrainingExample(example.get(0), example.get(1));
-            List<FloatMatrix> gradLoss_wrtW = gradLoss_wrtWandB.get(0);
-            List<FloatMatrix> gradLoss_wrtB = gradLoss_wrtWandB.get(1);
-            if(i==1) {
-                deltaW_l = Driver.copySizingInMatrixList(gradLoss_wrtW);
-                deltaB_l = Driver.copySizingInMatrixList(gradLoss_wrtB);
-                net.initialisePreviousUpdates(gradLoss_wrtW,gradLoss_wrtB);
-            }
-            //accumulate each update gradLoss_wrtW/B in deltaW_l
-            Driver.addFloatMatrixListsi(deltaW_l, gradLoss_wrtW);
-            Driver.addFloatMatrixListsi(deltaB_l, gradLoss_wrtB);
-        }
-        Driver.scalarMultiplyFloatMatrixListsi(deltaW_l, (1/(float)trainingBatchSize));
-        Driver.scalarMultiplyFloatMatrixListsi(deltaB_l, (1/(float)trainingBatchSize));
-        net.updateParameters(deltaW_l, deltaB_l, weightDecay, momentum, learningRate);
-    }
-    
-    private List<List<FloatMatrix>> presentTrainingExample(FloatMatrix input, FloatMatrix label)
-    {
-        FloatMatrix netOutput = net.computeFowardPass(input);
-        return net.backpropagate(netOutput, label);
-    }
-    
+
     private float computeExampleLoss(FloatMatrix netOutput, FloatMatrix expectedOutput)
     {
         netOutput.subi(expectedOutput);
@@ -142,15 +146,15 @@ class Trainer
     //returns a 2 floatMatricies, first is the input, 2nd is the expected output
     private List<FloatMatrix> getExample()
     {
-        return generateRandomSinSample();
+        return generateExample();
     }
     
-    private List<FloatMatrix> generateRandomSinSample()
+    private List<FloatMatrix> generateExample()
     {
         List<FloatMatrix> example = new ArrayList<FloatMatrix>();
-    
-        float randomX = Driver.randomNumberGen.nextFloat()*(float)Math.PI*2-((float)Math.PI);
-        float randomY = (float)Math.sin(randomX);
+        
+        float randomX = Driver.randomNumberGen.nextFloat()*(float)Math.PI*3-((float)Math.PI*(float)1.5);
+        float randomY = testFunction(randomX);
         /*FloatMatrix(int newRows, int newColumns, float... newData)
           Create a new matrix with newRows rows, newColumns columns using newData> as the data.
         */
@@ -191,8 +195,6 @@ class Trainer
         for(List<FloatMatrix> example: validationSet ) {
             Driver.printMatrixDetails("input",example.get(0));
             Driver.printMatrixDetails("label",example.get(1));
-            Driver.is(example.get(0).get(0,0)<maxX && example.get(0).get(0,0)>minX,
-                    true, "is input between minx and maxx");
             Driver.is(example.get(1).get(0,0),
                     testFunction(example.get(0).get(0,0)), "is label testFunction(input)");
         }
@@ -202,13 +204,10 @@ class Trainer
     {
         List<FloatMatrix> example = getExample();
         Driver.printMatrixDetails("input",example.get(0));
-        Driver.is(example.get(0).get(0,0)<=maxX && example.get(0).get(0,0)>=minX,
-                    true, "is input between minx and maxx");
         Driver.printMatrixDetails("label",example.get(1));
 
         Driver.is(example.get(1).get(0,0),
                     testFunction(example.get(0).get(0,0)), "is label testFunction(input)");
-    
     }
     
     void tests()
@@ -221,8 +220,7 @@ class Trainer
     public static void main(String[] args)
     {
         Driver d = new Driver();
-        Network net4 =  new Network(1,3,2,1);
-        Trainer t = new Trainer(net4,1);
+        Trainer t = new Trainer();
         t.tests();
     }
     

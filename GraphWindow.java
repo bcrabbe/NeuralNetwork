@@ -1,4 +1,10 @@
-/* Provide a top-level window for the game. */
+/*
+ Provides window for Grapher
+ 
+ Written by Ian Holyer https://www.cs.bris.ac.uk/Teaching/Resources/COMSM0103/lectures/8graphics/
+        https://www.cs.bris.ac.uk/Teaching/Resources/COMSM0103/lectures/8graphics/Window.java
+ 
+ */
 
 import javax.swing.*;
 import java.awt.*;

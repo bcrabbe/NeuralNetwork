@@ -8,6 +8,13 @@ Initialisation class
 */
 class Driver
 {
+    public static void main(String[] args)
+    {
+        Driver program = new Driver();
+        Trainer trainer = new Trainer();
+        trainer.trainNetwork();
+    }
+    
     static Random randomNumberGen;
     static int numberOfFails;
     
@@ -16,6 +23,7 @@ class Driver
         Driver.randomNumberGen = new Random();
         numberOfFails=0;
     }
+
     //add each matrix in mList2 element wise to each in mList1 result is stored in mList1
     static List<FloatMatrix> addFloatMatrixListsi(List<FloatMatrix> mList1, List<FloatMatrix> mList2)
     {
@@ -94,13 +102,5 @@ class Driver
         System.out.println("x = " + randomX);
         System.out.println("y = " + (float)Math.sin(randomX));
 
-    }
-
-    public static void main(String[] args)
-    {
-        Driver program = new Driver();
-        Network net = new Network(1,5,10,15,10,1);
-        Trainer trainer = new Trainer(net, 1);
-        trainer.trainNetwork();
     }
 }

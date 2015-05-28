@@ -1,9 +1,7 @@
 import org.jblas.*;
 import java.util.*;
 /**
-Layers
-    
- 
+Like a hiddenLayer but different formula for computeDeltas
 */
 
 class OutputLayer extends HiddenLayer
@@ -22,7 +20,7 @@ class OutputLayer extends HiddenLayer
         return deltas.dup();
     }
     
-    void testComputeDeltasFinalLayer()
+    private void testComputeDeltasFinalLayer()
     {
         fDashOfActivationZ = FloatMatrix.rand(numberOfNeurons);
         FloatMatrix networkOutput = FloatMatrix.rand(numberOfNeurons, 1);
@@ -34,9 +32,10 @@ class OutputLayer extends HiddenLayer
         Driver.is(deltas.columns, 1, "does delta Matrix have correct columns");
     }
     
-    void tests()
+    private void tests()
     {
         testComputeDeltasFinalLayer();
+        Driver.finishTesting("testComputeDeltasFinalLayer");
     }
 
     public static void main(String[] args)
