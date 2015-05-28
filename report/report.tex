@@ -5,14 +5,12 @@
  \usepackage{titling}             % Uncomment both to   
  \setlength{\droptitle}{-2.3cm}     % change title position 
 \usepackage[affil-it]{authblk}
-\usepackage{bibentry}
-\usepackage{cite}
 \usepackage{graphicx,bm,times,subfig,amsmath,amsfonts,listings,url}
 \usepackage{color}
 \usepackage[page]{appendix}
 \usepackage[utf8]{inputenc}
 \usepackage{csquotes}
-
+%\usepackage{bibentry}
 \definecolor{mygreen}{rgb}{0,0.6,0}
 \definecolor{mygray}{rgb}{0.5,0.5,0.5}
 \definecolor{mymauve}{rgb}{0.58,0,0.82}
@@ -72,7 +70,7 @@ Java Graphics Report}
 %\end{equation}
 \label{NNfig1}  } \end{figure}
 
-For my research project I am working with neural networks using a high level framework. To get some experience before I begin properly I have decided to use this assignment to explore some of the issues with training neural networks. I hope it will also provide some good OO design practise.
+For my research project I am working with neural networks using a high level framework. To get some experience before I begin properly I have decided to use this assignment to explore some of the issues with training neural networks. I hope it will also provide some good OO design practise. I have also made a graphing component which should be useful in the future.
 
 
 \section{Forward Propagation}
@@ -723,7 +721,7 @@ I had a number of bugs in the backPropagate method which took some time to iron 
 Eventually I found that I was multiplying the deltas by the transpose of the outputs rather than the inputs by mistake.
 
 
- I started out checking the my weight matrix extraction method in the HiddenLayers was working correctly
+ I started out checking that my weight matrix extraction method in the HiddenLayers was working correctly
 
 \begin{lstlisting}
        FloatMatrix getWeightMatrix()
@@ -1076,7 +1074,7 @@ Hopefully this is because of the settings of the hyperparameters (learning rate,
 
 
 Through observing the sizes of the weight updates, the network/layer details I found that often the network output would get stuck at 0 for every input. Thinking about the ReLU activation function $max(0,z)$, if the activation, z is negative then the output of the network is 0, so how can we compute sin of a -ve number? The output can only ever be positive. ReLU has been the activation function of choice in most recent papers on neural networks/convolutional neural networks, usually applied to image recognition where the output is a 1000 odd dimensional vector of class scores where you want a value 0-1 indicating the probability of the image belonging to that class. Perhaps it performs well in this context, but it wont work here, and probably not in my project, which is also a regression task. 
-I replaced this with with a logistic function, which also didn't really work, and then after reading over \cite{LeCun2012} I used what he advises which is $f(z) = 1.75912 \times tanh(\frac{2}{3} z)$
+I replaced this with with a logistic function, which also didn't really work, and then after reading over [1] I used what he advises which is $f(z) = 1.75912 \times tanh(\frac{2}{3} z)$
 
 \begin{lstlisting}
     // non linear activation applied on each neuron
@@ -1096,7 +1094,7 @@ I replaced this with with a logistic function, which also didn't really work, an
     }
 \end{lstlisting}
 
-I also adopted his recomendation for weight initialisation which is to draw the weights from a uniform distribution with mean = 0 and range $= m^{-1/2}$ where m is the number of inputs to that neuron. 
+I also adopted his recomendation for weight initialisation which is to draw the weights from a uniform distribution with mean = 0 and range $= m^{-1/2}/2$ where m is the number of inputs to that neuron. 
 \begin{lstlisting}
    Neuron(int numberOfInputs)
     {
@@ -1140,74 +1138,494 @@ x: [2.810899]  h(x): [0.738135]  y: [0.324700]
 x: [3.141592]  h(x): [0.739353]  y: [0.000000]
 After 1600000 examples. Validation error = 0.048531346
 \end{lstlisting}
-As you can see it tracks the function well around 0 but it doesn't manage to follow it back down to 0 near $\pm \pi$. Still this is conformation that the algorithm at least working! 
+As you can see it tracks the function well around 0 but it doesn't manage to follow it back down to 0 near $\pm \pi$. Still this is conformation that the algorithm at least working! ...probably.
 
-to better examine the results, and to practise graphics I have 
+To better examine the results, and to practise graphics I have made a graphing class. some of the drawing code was copied from  \url{https://gist.github.com/roooodcastro/6325153 } 
 \begin{lstlisting}
+import javax.swing.*;
+import java.util.*;
+import java.awt.*;
+import java.util.List;
+import java.math.*;
+import java.awt.geom.*;
+/** Graph drawing object
+    plots data in  DataList dataPoints
+    
+    some drawing code adapted from https://gist.github.com/roooodcastro/6325153
+*/
+class Grapher extends JPanel
+{
+    private static final long serialVersionUID = 282891015;
+    private int width = 800;
+    private int height = 400;
+    private int padding = 35;
+    private int labelPadding = 35;
+    private List<Color> lineColor = new ArrayList<Color>();
+    private Color pointColor = new Color(100, 100, 100, 180);
+    private Color gridColor = new Color(200, 200, 200, 200);
+    private static final Stroke GRAPH_STROKE = new BasicStroke(2f);
+    private int pointWidth = 4;
+    private int numberYDivisions = 10;
+    private int numberXDivisions = 9;
+    private float xScale;
+    private float yScale;
 
+    private DataList dataPoints;
+
+    public Grapher(DataList dataPoints)
+    {
+        setPreferredSize(new Dimension(width, height));
+        this.dataPoints = dataPoints;
+        lineColor.add(new Color(44, 102, 230, 180));
+        lineColor.add(new Color(230, 102, 44, 180));
+        lineColor.add(new Color(89, 240, 44, 180));
+    }
+    
+    private float getXScale()
+    {
+        return ((float)getWidth() - (2*padding) - labelPadding) /
+                                                dataPoints.getXRange();
+    }
+    
+    private float getYScale()
+    {
+        return ((float)getHeight() - (2*padding) - labelPadding) /
+                                                dataPoints.getYRange();
+    }
+    
+    protected void paintComponent(Graphics g)
+    {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        xScale = getXScale();
+        yScale = getYScale();
+        
+        List<List<Point>> plots = dataPoints.transformAndConvertToPointList(
+            xScale, (int)(padding+labelPadding-(dataPoints.getMinX()*xScale)),
+             -yScale, (dataPoints.getMaxY()*yScale)+padding);
+        
+        drawAxes(g2);
+        plotPoints(g2,plots);
+    }
+
+    private void plotPoints(Graphics2D g2,List<List<Point>> plots)
+    {
+        int plot=0;
+        for(List<Point> graphPoints: plots) {
+            Stroke oldStroke = g2.getStroke();
+            g2.setColor(lineColor.get(plot));
+            g2.setStroke(GRAPH_STROKE);
+            for (int i = 0; i < graphPoints.size() - 1; i++) {
+                int x1 = graphPoints.get(i).x;
+                int y1 = graphPoints.get(i).y;
+                int x2 = graphPoints.get(i + 1).x;
+                int y2 = graphPoints.get(i + 1).y;
+                g2.drawLine(x1, y1, x2, y2);
+            }
+            plot = plot+1<=lineColor.size() ? plot+1 : 0;
+            g2.setStroke(oldStroke);
+            g2.setColor(pointColor);
+            for (int i = 0; i < graphPoints.size(); i++) {
+                int x = graphPoints.get(i).x - pointWidth / 2;
+                int y = graphPoints.get(i).y - pointWidth / 2;
+                int ovalW = pointWidth;
+                int ovalH = pointWidth;
+                g2.fillOval(x, y, ovalW, ovalH);
+            }
+        }
+    }
+    
+    private void drawAxes(Graphics2D g2)
+    {
+        // draw white background
+        g2.setColor(Color.WHITE);
+        g2.fillRect(padding + labelPadding, padding,
+            getWidth() - (2*padding) - labelPadding, getHeight() - 2 * padding - labelPadding);
+        g2.setColor(Color.BLACK);
+        drawAxisX(g2);
+        drawAxisY(g2);
+        
+    }
+    
+    private void drawAxisX(Graphics2D g2)
+    {
+            // and for x axis
+        for (int i = 0; i <= numberXDivisions; i++) {
+            int x0 =  ((i * (getWidth() - padding * 2 - labelPadding)) /
+                        numberXDivisions + padding + labelPadding);
+            int x1 = x0;
+            int y0 = getHeight() - padding - labelPadding;
+            int y1 = y0 - pointWidth;
+            g2.setColor(gridColor);
+            g2.drawLine(x0, getHeight() - padding - labelPadding - 1 - pointWidth, x1, padding);
+            g2.setColor(Color.BLACK);
+            BigDecimal tickLabel = new BigDecimal(((i/(float)numberXDivisions)*dataPoints.getXRange() +
+                dataPoints.getMinX()));
+            tickLabel = tickLabel.round(new MathContext(3));
+            String xLabel = tickLabel + "";
+            FontMetrics metrics = g2.getFontMetrics();
+            int labelWidth = metrics.stringWidth(xLabel);
+            g2.drawString(xLabel, x0 - labelWidth / 2, y0 + metrics.getHeight() + 3);
+            g2.drawLine(x0, y0, x1, y1);
+        }
+        g2.drawLine(padding + labelPadding, getHeight() - padding - labelPadding, getWidth() - padding, getHeight() - padding - labelPadding);
+        if(dataPoints.labelsSet) {
+            String xLabel = dataPoints.getXlabel();
+            FontMetrics metrics = g2.getFontMetrics();
+            int labelWidth = metrics.stringWidth(xLabel);
+            int x0 = (getWidth())/2;
+            int y0 = (getHeight() )-padding ;
+            g2.drawString(xLabel, x0 - labelWidth / 2, y0 + metrics.getHeight() + 3);
+        }
+    }
+    
+    private void drawAxisY(Graphics2D g2)
+    {
+        for (int i = 0; i < numberYDivisions + 1; i++) {
+            int x0 = padding + labelPadding;
+            int x1 = pointWidth + padding + labelPadding;
+            int y0 = getHeight() - ((i * (getHeight() - padding * 2 - labelPadding)) /
+                                            numberYDivisions + padding + labelPadding);
+            int y1 = y0;
+            g2.setColor(gridColor);
+            g2.drawLine(padding + labelPadding + 1 + pointWidth, y0, getWidth() - padding, y1);
+            g2.setColor(Color.BLACK);
+            BigDecimal tickLabel = new BigDecimal(( (int)((dataPoints.getMinY() + (dataPoints.getMaxY() -
+                dataPoints.getMinY()) * ((i * 1.0) / numberYDivisions)) * 100)) / 100.0 );
+            tickLabel = tickLabel.round(new MathContext(2));
+            String yLabel = tickLabel + "";
+            FontMetrics metrics = g2.getFontMetrics();
+            int labelWidth = metrics.stringWidth(yLabel);
+            g2.drawString(yLabel, x0 - labelWidth - 5, y0 + (metrics.getHeight() / 2) - 3);
+            g2.drawLine(x0, y0, x1, y1);
+        }
+        g2.drawLine(padding + labelPadding, getHeight() - padding - labelPadding, padding + labelPadding, padding);
+        if(dataPoints.labelsSet) {
+            String yLabel = dataPoints.getYlabel();
+            FontMetrics metrics = g2.getFontMetrics();
+            int labelWidth = metrics.stringWidth(yLabel);
+            AffineTransform defaultAt = new AffineTransform();
+            defaultAt = g2.getTransform();
+            AffineTransform at = new AffineTransform();
+            at.rotate(-Math.PI / 2);
+            g2.setTransform(at);
+            int x0 = padding;
+            int y0 = getHeight()/2 ;
+            System.out.println(yLabel);
+            g2.drawString(yLabel, -(y0  + 3)-labelWidth/2, x0 - metrics.getHeight()  );
+            g2.setTransform(defaultAt);
+        }
+    }
+    
+    public void update(DataList updatedList)
+    {
+        dataPoints = updatedList;
+        invalidate();
+        this.repaint();
+    }
+}
 \end{lstlisting}
+
+
+
+This works an adapted version of your Window class (used in Cross program) 
 \begin{lstlisting}
+/*
+ Provides window for Grapher
+ 
+ Written by Ian Holyer https://www.cs.bris.ac.uk/Teaching/Resources/COMSM0103/lectures/8graphics/
+        https://www.cs.bris.ac.uk/Teaching/Resources/COMSM0103/lectures/8graphics/Window.java
+ 
+ */
 
+import javax.swing.*;
+import java.awt.*;
+import java.util.concurrent.*;
+import java.util.List;
+
+class GraphWindow
+{
+    private int task, START=0, UPDATE=1;
+    private Grapher graph;
+    private DataList dataPoints;
+    
+    GraphWindow(DataList dataPoints)
+    {
+        this.dataPoints = dataPoints;
+        task = START;
+        SwingUtilities.invokeLater(this::run);
+    }
+
+    void update(DataPoint additionalDataPoint)
+    {
+        dataPoints.add(additionalDataPoint);
+        task = UPDATE;
+        try { SwingUtilities.invokeAndWait(this::run); }
+        catch (Exception err) { throw new Error(err); }
+    }
+    
+    void update(DataList newDataList)
+    {
+        dataPoints = newDataList;
+        task = UPDATE;
+        try { SwingUtilities.invokeAndWait(this::run); }
+        catch (Exception err) { throw new Error(err); }
+    }
+
+    private void run()
+    {
+        if (task == START) start();
+        else if (task == UPDATE) update();
+    }
+
+    private void start()
+    {
+        JFrame w = new JFrame();
+        w.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        graph = new Grapher(dataPoints);
+        w.add(graph);
+        w.pack();
+        w.setLocationByPlatform(true);
+        w.setVisible(true);
+    }
+
+    private void update()
+    {
+        graph.update(dataPoints);
+    }
+}
 \end{lstlisting}
+
+These make use of a DataList class
 \begin{lstlisting}
-
+import java.util.*;
+import java.awt.*;
+import java.util.List;
+/*
+    a collection of DataPoints compatible with Grapher
+*/
+class DataList
+{
+    private List<DataPoint> data;
+    private int numberOfYs=0;
+    private String Xlabel;
+    private String Ylabel;
+    boolean labelsSet=false;
+    DataList(int capacity)
+    {
+        data = new ArrayList<DataPoint>(capacity);
+    }
+    
+    DataList()
+    {
+        data = new ArrayList<DataPoint>();
+    }
+    
+    String getXlabel()
+    {
+        return Xlabel;
+    }
+    
+    String getYlabel()
+    {
+        return Ylabel;
+    }
+    
+    void labelAxes(String Xlabel0, String Ylabel0)
+    {
+        Xlabel = Xlabel0;
+        Ylabel = Ylabel0;
+        labelsSet=true;
+    }
+    
+    int size()
+    {
+        return data.size();
+    }
+    
+    void add(float x0, float...y0)
+    {
+        DataPoint newData = new DataPoint(x0, y0);
+        if(numberOfYs==0) {
+            numberOfYs=newData.getNumberOfYs();
+        }
+        else if(newData.getNumberOfYs()!=numberOfYs) {
+            throw new Error("DataList contains " + numberOfYs +
+             " y coordinates per point. " +
+             "If you want to add a point with less set the y you wish to ignore NULL");
+        }
+        data.add(newData);
+    }
+    
+    void add(DataPoint newData)
+    {
+        if(numberOfYs==0) {
+            numberOfYs=newData.getNumberOfYs();
+        }
+        else if(newData.getNumberOfYs()!=numberOfYs) {
+            throw new Error("DataList contains " + numberOfYs +
+             " y coordinates per point. " +
+             "If you want to add a point with less set the y you wish to ignore NULL");
+        }
+        data.add(newData);
+    }
+    
+    float getMaxX()
+    {
+        float maxX = data.get(0).x;
+        for(DataPoint point: data) {
+            maxX = point.x > maxX ? point.x : maxX;
+        }
+        return maxX;
+    }
+    
+    float getMinX()
+    {
+        float minX = data.get(0).x;
+        for(DataPoint point: data) {
+            minX = point.x < minX ? point.x : minX;
+        }
+        return minX;
+    }
+    
+    float getXRange()
+    {
+        return getMaxX()-getMinX();
+    }
+    
+    float getMaxY()
+    {
+        float maxY = data.get(0).y.get(0);
+        for(DataPoint point: data) {
+            for(float y_i: point.y) {
+                maxY = y_i > maxY ? y_i : maxY;
+            }
+        }
+        return maxY;
+    }
+    
+    float getMinY()
+    {
+        float minY = data.get(0).y.get(0);
+        for(DataPoint point: data) {
+            for(float y_i: point.y) {
+                minY = y_i < minY ? y_i : minY;
+            }
+        }
+        return minY;
+    }
+    
+    float getYRange()
+    {
+        return getMaxY()-getMinY();
+    }
+    
+    List<List<Point>> convertToPointList()
+    {
+        List<List<Point>> pList = new ArrayList<List<Point>>(numberOfYs);
+        for(int i=0; i<numberOfYs; ++i) {
+            List<Point> xyList = new ArrayList<Point>(data.size());
+            for(int p=0; p<data.size(); ++p) {
+                xyList.add(new Point((int)data.get(p).x, data.get(p).y.get(i).intValue()));
+            }
+            pList.add(xyList);
+        }
+        return pList;
+    }
+    
+    List<List<Point>> transformAndConvertToPointList(float scaleX, float offsetX, float scaleY, float offsetY)
+    {
+        DataList transformedList = transformDataPoints(scaleX,offsetX,scaleY,offsetY);
+        return transformedList.convertToPointList();
+    }
+    
+    DataList transformDataPoints(float scaleX, float offsetX, float scaleY, float offsetY)
+    {
+        DataList transformedList = new DataList(data.size());
+        for(DataPoint dp : data) {
+            DataPoint tranformedData = new DataPoint( scaleX*dp.x + offsetX);
+            for(float y: dp.y) {
+                tranformedData.addY(scaleY*y + offsetY);
+            }
+            transformedList.add(tranformedData);
+        }
+        return transformedList;
+    }
+    
+    void transformDataPointsi(float scaleX, float offsetX, float scaleY, float offsetY)
+    {
+        for(DataPoint dp : data) {
+            dp.x = scaleX*dp.x + offsetX;
+            for(float y: dp.y) {
+                y = scaleY*y + offsetY;
+            }
+        }
+    }
+    
+}
 \end{lstlisting}
+
 \begin{lstlisting}
-
+import java.util.*;
+/*
+x, y1, y2, y3... 
+data point for Grapher 
+*/
+class DataPoint
+{
+    float x;
+    List<Float> y;
+    
+    DataPoint(float x0, float...y0)
+    {
+        y = new ArrayList<Float>();
+        x = x0;
+        for(float y_i: y0) {
+            y.add(new Float(y_i));
+        }
+    }
+    
+    void addY(float y0)
+    {
+        y.add(y0);
+    }
+    
+    int getNumberOfYs()
+    {
+        return y.size();
+    }
+    
+}
 \end{lstlisting}
-\begin{lstlisting}
 
-\end{lstlisting}
-\begin{lstlisting}
+\begin{figure}
+\centering\includegraphics*[width=1\linewidth,clip]{figure2}\caption{Above: the validation error as the number of examples increases. Below: the output of the network in blue against sin function in red. 
+\label{valu}  } \end{figure}
 
-\end{lstlisting}
-\begin{lstlisting}
+I have used these to monitor the validation set results over successive training batches. After much fiddling I managed to achieve what is shown in figure 2
 
-\end{lstlisting}
-\begin{lstlisting}
+Things I found:
+\begin{itemize}
+\item{The learning rate is incredibly delicate, too high and the weights diverge, too low and nothing happens}
+\item{often the network would begin to converge only to go to far and explode. I think this is because the weights are all converging at different speeds, with earlier layers taking a particularly long time. This was found by looking at the average weight updates per batch, the deltas in early layers are very small... this is known as the vanishing gradient proplem. To combat it I multiply the learning rate by numberOfLayer-layerNumber *a scalar     private float layerLRmultiplier
+I found that a value of 5 for this worked well with a 2 layer net.
 
-\end{lstlisting}
-\begin{lstlisting}
+I also multiplied the learning rate by the sqrt of the number of inputs as per the instructions of \cite{LeCun2012}}
 
-\end{lstlisting}
-\begin{lstlisting}
+\item{In general I found more success with shallow networks. Anything more than 4-5 layers was very prone to explloding/not changing.}
+\item{I found that extending the training data to a bigger range helped bring the outputs down around the edges.}
+\end{itemize}
 
-\end{lstlisting}
-\begin{lstlisting}
+%\begin{thebibliography}{99}
 
-\end{lstlisting}
-\begin{lstlisting}
+%\bibitem{LeCun2012} LeCun, Y. Bottou, L. Orr, Genevieve B. Müller, Klaus Robert, \textit{Efficient backprop}, Lecture Notes in Computer Science (including subseries Lecture Notes in Artificial Intelligence and Lecture Notes in Bioinformatics), 7700 LECTU, (2012).
+%\end{thebibliography}
+\bibliographystyle{plain}\bibliography{library}
 
-\end{lstlisting}
-\begin{lstlisting}
 
-\end{lstlisting}
-\begin{lstlisting}
 
-\end{lstlisting}
-\begin{lstlisting}
-
-\end{lstlisting}
-\begin{lstlisting}
-
-\end{lstlisting}
-\begin{lstlisting}
-
-\end{lstlisting}
-\begin{lstlisting}
-
-\end{lstlisting}
-\begin{lstlisting}
-
-\end{lstlisting}
 \end{document}
-
-
-
-
-
-
-
-
 
 

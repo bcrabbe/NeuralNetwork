@@ -6,9 +6,11 @@ import java.util.List;
 */
 class DataList
 {
-    List<DataPoint> data;
-    int numberOfYs=0;
-    
+    private List<DataPoint> data;
+    private int numberOfYs=0;
+    private String Xlabel;
+    private String Ylabel;
+    boolean labelsSet=false;
     DataList(int capacity)
     {
         data = new ArrayList<DataPoint>(capacity);
@@ -17,6 +19,23 @@ class DataList
     DataList()
     {
         data = new ArrayList<DataPoint>();
+    }
+    
+    String getXlabel()
+    {
+        return Xlabel;
+    }
+    
+    String getYlabel()
+    {
+        return Ylabel;
+    }
+    
+    void labelAxes(String Xlabel0, String Ylabel0)
+    {
+        Xlabel = Xlabel0;
+        Ylabel = Ylabel0;
+        labelsSet=true;
     }
     
     int size()

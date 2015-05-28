@@ -3,7 +3,7 @@ import java.util.*;
 import java.awt.*;
 import java.util.List;
 import java.math.*;
-
+import java.awt.geom.*;
 /** Graph drawing object
     plots data in  DataList dataPoints
     
@@ -15,14 +15,14 @@ class Grapher extends JPanel
     private int width = 800;
     private int height = 400;
     private int padding = 35;
-    private int labelPadding = 25;
+    private int labelPadding = 35;
     private List<Color> lineColor = new ArrayList<Color>();
     private Color pointColor = new Color(100, 100, 100, 180);
     private Color gridColor = new Color(200, 200, 200, 200);
     private static final Stroke GRAPH_STROKE = new BasicStroke(2f);
     private int pointWidth = 4;
     private int numberYDivisions = 10;
-    private int numberXDivisions = 4;
+    private int numberXDivisions = 9;
     private float xScale;
     private float yScale;
 
@@ -102,6 +102,7 @@ class Grapher extends JPanel
         g2.setColor(Color.BLACK);
         drawAxisX(g2);
         drawAxisY(g2);
+        
     }
     
     private void drawAxisX(Graphics2D g2)
@@ -126,6 +127,14 @@ class Grapher extends JPanel
             g2.drawLine(x0, y0, x1, y1);
         }
         g2.drawLine(padding + labelPadding, getHeight() - padding - labelPadding, getWidth() - padding, getHeight() - padding - labelPadding);
+        if(dataPoints.labelsSet) {
+            String xLabel = dataPoints.getXlabel();
+            FontMetrics metrics = g2.getFontMetrics();
+            int labelWidth = metrics.stringWidth(xLabel);
+            int x0 = (getWidth())/2;
+            int y0 = (getHeight() )-padding ;
+            g2.drawString(xLabel, x0 - labelWidth / 2, y0 + metrics.getHeight() + 3);
+        }
     }
     
     private void drawAxisY(Graphics2D g2)
@@ -149,7 +158,21 @@ class Grapher extends JPanel
             g2.drawLine(x0, y0, x1, y1);
         }
         g2.drawLine(padding + labelPadding, getHeight() - padding - labelPadding, padding + labelPadding, padding);
-
+        if(dataPoints.labelsSet) {
+            String yLabel = dataPoints.getYlabel();
+            FontMetrics metrics = g2.getFontMetrics();
+            int labelWidth = metrics.stringWidth(yLabel);
+            AffineTransform defaultAt = new AffineTransform();
+            defaultAt = g2.getTransform();
+            AffineTransform at = new AffineTransform();
+            at.rotate(-Math.PI / 2);
+            g2.setTransform(at);
+            int x0 = padding;
+            int y0 = getHeight()/2 ;
+            System.out.println(yLabel);
+            g2.drawString(yLabel, -(y0  + 3)-labelWidth/2, x0 - metrics.getHeight()  );
+            g2.setTransform(defaultAt);
+        }
     }
     
     public void update(DataList updatedList)

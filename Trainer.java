@@ -6,34 +6,34 @@ import java.util.*;
 */
 class Trainer
 {
+    //These are the parameters to play with:
     private Network net = new Network(1,80,50,1);;
-    private int inputWidth = 1;
     private int trainingBatchSize = 10;
-    private int validationSetSize = 80;
-    private int trainingSetSize = 2000;
-
     private float weightDecay = (float)0.05;
     private float momentum = (float)0.95;
     private float learningRate = (float)0.00001;
     //multiplies the LR by numberOfLayers-layerNumber*layerLRmultiplier to negate vanishing gradients:
     private float layerLRmultiplier = (float)5;
     
+    //the range of the validation set:
+    private int validationSetSize = 80;
     private float minX = (float)-(1.2)*(float)Math.PI,
                   maxX = (float)(1.2)*(float)Math.PI;
     List<List<FloatMatrix>> validationSet;
-    
+
     private boolean plotting = true;
     private GraphWindow validationResultsWindow = null;
     private GraphWindow validationErrorWindow = null;
     private DataList validationErrorDataList;
     //examples perPlot:
-    private int plotRate = 10001;
+    private int plotRate = 5001;
     private boolean verbose = false;
     
     Trainer()
     {
         validationSet = makeDataSet(validationSetSize);
         validationErrorDataList = new DataList();
+        validationErrorDataList.labelAxes("Examples", "Validation Error");
     }
 
     //runs training batches repeatedly plots results intermittedly
@@ -47,7 +47,7 @@ class Trainer
                 net.printNetworkDetails();
             }
             if(examplesUntillPrint<=0) {
-                float validationError = measureValidationError(true);
+                float validationError = measureValidationError();
                 if(plotting) {
                     validationErrorDataList.add((float)examplesShown, validationError);
                     plotValidationError();
@@ -99,7 +99,7 @@ class Trainer
         System.out.println("x: " + input.toString() + " h(x): " + output.toString() + " y: " + label.toString());
     }
     
-    private float measureValidationError(boolean verbose)
+    private float measureValidationError()
     {
         float validationError = 0;
         for(int i=0; i<validationSetSize; ++i) {
@@ -113,6 +113,7 @@ class Trainer
         return validationError/(float)validationSetSize;
     }
     
+    //plots the validation error against the number of examples
     private void plotValidationError()
     {
         if(validationErrorWindow==null) {
@@ -122,9 +123,11 @@ class Trainer
         }
     }
     
+    //plots the networks output on the validation set
     private void plotValidationResults()
     {
         DataList datalist = new DataList(validationSetSize);
+        datalist.labelAxes("Input", "Output");
         for(int i=0; i<validationSetSize; ++i) {
             List<FloatMatrix> example = validationSet.get(i);
             FloatMatrix netOutput = net.computeFowardPass(example.get(0));
